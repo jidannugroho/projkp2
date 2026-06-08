@@ -1,0 +1,128 @@
+version: '3.8'
+
+services:
+   # PostgreSQL Database
+   postgres:
+      image: postgres:16-alpine
+      container_name: aset-core-db
+      restart: unless-stopped
+      environment:
+         POSTGRES_USER: ${DB_USER:-postgres}
+         POSTGRES_PASSWORD: ${DB_PASSWORD:-postgres}
+         POSTGRES_DB: ${DB_NAME:-aset_sekolah}
+         POSTGRES_INITDB_ARGS: '-c max_connections=200'
+      ports:
+         - '${DB_PORT:-5432}:5432'
+      volumes:
+         - postgres_data:/var/lib/postgresql/data
+         - ./database/migrations/001_init.sql:/docker-entrypoint-initdb.d/001_init.sql
+         - ./database/migrations/002_add_qr_code.sql:/docker-entrypoint-initdb.d/002_add_qr_code.sql
+      healthcheck:
+         test: ['CMD-SHELL', 'pg_isready -U ${DB_USER:-postgres}']
+         interval: 10s
+         timeout: 5s
+         retries: 5
+      networks:
+         - aset-core-network
+      logging:
+         driver: 'json-file'
+         options:
+            max-size: '10m'
+            max-file: '3'
+
+   # Node.js Backend
+   backend:
+      image: jidannugroho/aset-core-backend:1.5
+      build:
+         context: ./backend
+         dockerfile: Dockerfile
+      container_name: aset-core-backend
+      restart: unless-stopped
+      environment:
+         NODE_ENV: ${NODE_ENV:-production}
+         PORT: ${BACKEND_PORT:-5001}
+         DATABASE_URL: postgres://${DB_USER:-postgres}:${DB_PASSWORD:-postgres}@postgres:5432/${DB_NAME:-aset_sekolah}
+         JWT_SECRET: ${JWT_SECRET:-aset_sekolah_secret_2026}
+         FRONTEND_URL: ${FRONTEND_URL:-http://192.168.1.14}
+         # Optional: Add other environment variables here
+         # CLOUDINARY_CLOUD_NAME: ${CLOUDINARY_CLOUD_NAME}
+         # CLOUDINARY_API_KEY: ${CLOUDINARY_API_KEY}
+         # CLOUDINARY_API_SECRET: ${CLOUDINARY_API_SECRET}
+      ports:
+         - '${BACKEND_PORT:-5001}:5001'
+      depends_on:
+         postgres:
+            condition: service_healthy
+      networks:
+         - aset-core-network
+      healthcheck:
+         test:
+            [
+               'CMD',
+               'wget',
+               '--quiet',
+               '--tries=1',
+               '--spider',
+               'http://localhost:5001/health',
+            ]
+         interval: 30s
+         timeout: 10s
+         retries: 3
+      logging:
+         driver: 'json-file'
+         options:
+            max-size: '10m'
+            max-file: '3'
+      volumes:
+         - backend_uploads:/app/uploads
+
+   # React Frontend
+   frontend:
+      image: jidannugroho/aset-core-frontend:1.5
+      build:
+         context: .
+         dockerfile: Dockerfile
+         args:
+            VITE_API_URL: ${VITE_API_URL:-/api}
+            VITE_SOCKET_URL: ${VITE_SOCKET_URL:-http://192.168.1.14}
+      container_name: aset-core-frontend
+      restart: unless-stopped
+      environment:
+         VITE_API_URL: ${VITE_API_URL:-/api}
+         VITE_SOCKET_URL: ${VITE_SOCKET_URL:-http://192.168.1.14}
+      ports:
+         - '${FRONTEND_PORT:-8080}:8080'
+      depends_on:
+         - backend
+      networks:
+         - aset-core-network
+      healthcheck:
+         test:
+            [
+               'CMD',
+               'wget',
+               '--quiet',
+               '--tries=1',
+               '--spider',
+               'http://localhost:8080',
+            ]
+         interval: 30s
+         timeout: 10s
+         retries: 3
+      logging:
+         driver: 'json-file'
+         options:
+            max-size: '10m'
+            max-file: '3'
+
+# Volumes for persistent data
+volumes:
+   postgres_data:
+      driver: local
+   backend_uploads:
+      driver: local
+
+# Networks
+networks:
+   aset-core-network:
+      driver: bridge
