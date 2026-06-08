@@ -43,7 +43,7 @@ services:
          PORT: ${BACKEND_PORT:-5001}
          DATABASE_URL: postgres://${DB_USER:-postgres}:${DB_PASSWORD:-postgres}@postgres:5432/${DB_NAME:-aset_sekolah}
          JWT_SECRET: ${JWT_SECRET:-aset_sekolah_secret_2026}
-         FRONTEND_URL: ${FRONTEND_URL:-http://192.168.1.14:8080}
+         FRONTEND_URL: ${FRONTEND_URL:-http://192.168.1.14}
          # Optional: Add other environment variables here
          # CLOUDINARY_CLOUD_NAME: ${CLOUDINARY_CLOUD_NAME}
          # CLOUDINARY_API_KEY: ${CLOUDINARY_API_KEY}
@@ -63,7 +63,7 @@ services:
                '--quiet',
                '--tries=1',
                '--spider',
-               'http://192.168.1.14:5001/health',
+               'http://localhost:5001/health',
             ]
          interval: 30s
          timeout: 10s
@@ -111,7 +111,25 @@ services:
          options:
             max-size: '10m'
             max-file: '3'
-
+   # Nginx Reverse Proxy
+   nginx:
+      image: nginx:alpine
+      container_name: aset-core-nginx
+      restart: unless-stopped
+      ports:
+         - '80:80'
+      volumes:
+         - ./nginx/nginx.conf:/etc/nginx/conf.d/default.conf
+      depends_on:
+         - frontend
+         - backend
+      networks:
+         - aset-core-network
+      logging:
+         driver: 'json-file'
+         options:
+            max-size: '10m'
+            max-file: '3'
 # Volumes for persistent data
 volumes:
    postgres_data:
