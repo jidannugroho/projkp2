@@ -32,7 +32,7 @@ services:
 
    # Node.js Backend
    backend:
-      image: jidannugroho/aset-core-backend:2.0
+      image: jidannugroho/aset-core-backend:2.1
       build:
          context: ./backend
          dockerfile: Dockerfile
@@ -78,7 +78,7 @@ services:
 
    # React Frontend
    frontend:
-      image: jidannugroho/aset-core-frontend:2.0
+      image: jidannugroho/aset-core-frontend:2.1
       build:
          context: .
          dockerfile: Dockerfile
