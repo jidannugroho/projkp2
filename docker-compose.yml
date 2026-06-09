@@ -43,7 +43,7 @@ services:
          PORT: ${BACKEND_PORT:-5001}
          DATABASE_URL: postgres://${DB_USER:-postgres}:${DB_PASSWORD:-postgres}@postgres:5432/${DB_NAME:-aset_sekolah}
          JWT_SECRET: ${JWT_SECRET:-aset_sekolah_secret_2026}
-         FRONTEND_URL: ${FRONTEND_URL:-http://192.168.1.14}
+         FRONTEND_URL: ${FRONTEND_URL:-http://assetcore.smkn1jakarta.sch.id}
          # Optional: Add other environment variables here
          # CLOUDINARY_CLOUD_NAME: ${CLOUDINARY_CLOUD_NAME}
          # CLOUDINARY_API_KEY: ${CLOUDINARY_API_KEY}
@@ -83,8 +83,8 @@ services:
          context: .
          dockerfile: Dockerfile
          args:
-            VITE_API_URL: http://192.168.1.14/api
-            VITE_SOCKET_URL: http://192.168.1.14
+            VITE_API_URL: http://assetcore.smkn1jakarta.sch.id/api
+            VITE_SOCKET_URL: http://assetcore.smkn1jakarta.sch.id
       container_name: aset-core-frontend
       restart: unless-stopped
       ports:
